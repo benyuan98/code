@@ -15,7 +15,7 @@ def dictionary96(U, option='monomial'):
     n = U.shape[1]
 
     # phiX num of cols = 1 + n + [n + (n-1) + ... + 1]
-    phiX = np.zeros((m, 1 + n + n*(n+1)/2)) 
+    phiX = np.zeros((m, (n+2)*(n+1)//2)) 
     
     # set 0-th column to ones
     phiX[:, 0] = 1
@@ -25,22 +25,21 @@ def dictionary96(U, option='monomial'):
 
     # the starting column in which we put combinations of monomials
     ind = n+1
-    for k in range(1, n+1):
-        # duplicate the kth monomial, i.e. U[:, k], n+1-k times
-        curMono = np.tile(np.array([U[:, k]]).tranpose(), (1, n+1-k))
+    for k in range(0, n):
+        # duplicate the kth monomial, i.e. U[:, k], n-k times
+        curMono = np.tile(np.array([U[:, k]]).transpose(), (1, n-k))
         # all monomials that haven't paired with the kth monomial
-        curPairs = U[:, k:n+1]
+        curPairs = U[:, k:n]
         # pair curMono with curPairs
         curPoly = np.multiply(curMono, curPairs)
         # assign to corresponding columns of phiX
-        phiX[:, ind:ind+n+1-k] = 3*curPoly 
+        phiX[:, ind:ind+n-k] = 3*curPoly 
         
-        # if option is lendre, then all squared terms of monomials have to be changed accordingly
+        # if option is legendre, then all squared terms of monomials have to be changed accordingly
         if(option == 'legendre'):
             phiX[:,ind] = math.sqrt(5)/2*(3*np.square(U[:, k])-1)
 
-        # up date ind for the next monomial column
-        ind += n+1-k 
+        # update ind for the next monomial column
+        ind += n-k 
     
     return phiX
-
