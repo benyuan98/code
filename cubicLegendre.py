@@ -61,7 +61,7 @@ def cubicDict(U):
     # index in phiX 
     cubicInd = 1 + n + n*(n+1)//2
     # index in quadD
-    quadInd = 0
+    quadInd = n + 1
 
     # set the first 1 + n + n*(n+1)/2 columns to be quadD
     phiX[:,:quadD.shape[1]] = quadD
