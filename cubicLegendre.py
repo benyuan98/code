@@ -14,8 +14,10 @@ def linearDict(U):
     m,n = U.shape
     phiX = np.zeros((m, n+1))
     phiX[:, 0] = 1
-    phiX[:, 1:n+1] = U
+    phiX[:, 1:n+1] = linearLegendre(U)
     return phiX
+def linearLegendre(U):
+    return math.sqrt(3) * U
 
 def quadraticDict(U):
     m,n = U.shape
@@ -23,14 +25,11 @@ def quadraticDict(U):
     # phiX num of cols = 1 + n + [n + (n-1) + ... + 1]
     phiX = np.zeros((m, (n+2)*(n+1)//2)) 
     
-    # set 0-th column to ones
-    phiX[:, 0] = 1
-
-    # set the next n columns to monomials
-    phiX[:,1:n+1] = U
-
+    # set the first n + 1 columns to linear dictionary
+    phiX[:,0:n+1] = linearDict(U)
+    
     # stores the indices of squared monomials in phiX
-
+    squaredMonomial = dict()
 
     # the starting column in which we put combinations of monomials
     ind = n+1
@@ -45,18 +44,21 @@ def quadraticDict(U):
         phiX[:, ind:ind+n-k] = curQuad
         
         # since is legendre, then all squared terms of monomials have to be changed accordingly
-        # phiX[:,ind] = math.sqrt(5)/2*(3*np.square(U[:, k])-1)
+        phiX[:,ind] = squaredLegendre(U[:,k])
+        squaredMonomial[ind] = k
 
         # update ind for the next monomial column
         ind += n-k 
     
-    return phiX
+    return (phiX, squaredMonomial)
+def squaredLegendre(col):
+    return math.sqrt(5)/2*(3*np.square(col)-1)
 
 def cubicDict(U):
     m,n = U.shape
     
     phiX = np.zeros((m, 1 + n + n*(n+1)//2 + n^2 + n*(n-1)*(n-2)//6)) 
-    quadD = quadraticDict(U)
+    quadD, squareindex = quadraticDict(U)
 
     # index in phiX 
     cubicInd = 1 + n + n*(n+1)//2
@@ -68,6 +70,9 @@ def cubicDict(U):
 
     # stores the indices of cubed monomials in phiX
     cubicMonomial = dict()
+    
+    # stores indices of terms with squared monomial times a different monomial
+    cubicTwoVariables = dict()
 
     for i in range(n):
         # number of cols X_{i+1} need to duplicate
@@ -76,16 +81,25 @@ def cubicDict(U):
 
         curCube = np.multiply(curMono, quadD[:,quadInd:])
         phiX[:,cubicInd:cubicInd+dim] = curCube
-
-        cubicMonomial[str(i+1)] = cubicInd
-
+        
+        # since is legendre, all cubed terms of monomials have to be changed accordingly
+        phiX[:, cubicInd] = cubicLegendre(U[:,i])
+        
+        cubicMonomial[cubicInd] = i+1
+        
+        # add indices of terms with a squared monomial times a different monomial
+        for j in range(n-i-1):
+            cubicTwoVariables[cubicInd+j] = i+j+2
+        for k in range(n-i, 1, -1):
+            cubicTwoVariables[cubicInd+k] = i
+        
         cubicInd += dim
         quadInd += (n-i)
 
-    return phiX
+    return (phiX, cubicMonomial, cubicTwoVariables)
 
-
-
+def cubicLegendre(col):
+    return math.sqrt(7)/2*(5*np.power(col, 3)-3*col)
 
 
 def nChoose3R1(n):
